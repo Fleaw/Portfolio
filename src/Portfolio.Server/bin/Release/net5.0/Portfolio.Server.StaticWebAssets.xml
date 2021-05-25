@@ -1,0 +1,4 @@
+﻿<StaticWebAssets Version="1.0">
+  <ContentRoot BasePath="/" Path="C:\Users\Johan\Documents\Fsharp Projects\Portfolio\src\Portfolio.Client\bin\Release\net5.0\wwwroot\" />
+  <ContentRoot BasePath="/" Path="C:\Users\Johan\Documents\Fsharp Projects\Portfolio\src\Portfolio.Client\wwwroot\" />
+</StaticWebAssets>

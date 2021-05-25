@@ -1,0 +1,15 @@
+﻿<SatelliteAssembly>
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\cs\FSharp.Core.resources.dll" Culture="cs" DestinationSubDirectory="cs\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\de\FSharp.Core.resources.dll" Culture="de" DestinationSubDirectory="de\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\es\FSharp.Core.resources.dll" Culture="es" DestinationSubDirectory="es\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\fr\FSharp.Core.resources.dll" Culture="fr" DestinationSubDirectory="fr\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\it\FSharp.Core.resources.dll" Culture="it" DestinationSubDirectory="it\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\ja\FSharp.Core.resources.dll" Culture="ja" DestinationSubDirectory="ja\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\ko\FSharp.Core.resources.dll" Culture="ko" DestinationSubDirectory="ko\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\pl\FSharp.Core.resources.dll" Culture="pl" DestinationSubDirectory="pl\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\pt-BR\FSharp.Core.resources.dll" Culture="pt-BR" DestinationSubDirectory="pt-BR\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\ru\FSharp.Core.resources.dll" Culture="ru" DestinationSubDirectory="ru\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\tr\FSharp.Core.resources.dll" Culture="tr" DestinationSubDirectory="tr\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\zh-Hans\FSharp.Core.resources.dll" Culture="zh-Hans" DestinationSubDirectory="zh-Hans\" />
+  <Assembly Name="C:\Users\Johan\.nuget\packages\fsharp.core\5.0.0\lib\netstandard2.0\zh-Hant\FSharp.Core.resources.dll" Culture="zh-Hant" DestinationSubDirectory="zh-Hant\" />
+</SatelliteAssembly>
