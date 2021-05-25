@@ -13,6 +13,7 @@ let page = doctypeHtml [] [
         ``base`` [attr.href "/"]
         link [attr.rel "stylesheet"; attr.href "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css"]
         link [attr.rel "stylesheet"; attr.href "css/index.css"]
+        link [attr.rel "stylesheet"; attr.href "TemplateData/style.css"]
     ]
     body [] [
         nav [attr.classes ["navbar"; "is-dark"]; "role" => "navigation"; attr.aria "label" "main navigation"] [

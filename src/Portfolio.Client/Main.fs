@@ -1,6 +1,7 @@
 module Portfolio.Client.Main
 
 open System
+open System.Web
 open Elmish
 open Bolero
 open Bolero.Html
@@ -13,6 +14,7 @@ type Page =
     | [<EndPoint "/">] Home
     | [<EndPoint "/counter">] Counter
     | [<EndPoint "/data">] Data
+    | [<EndPoint "/game">] Game
 
 /// The Elmish application's model.
 type Model =
@@ -185,6 +187,9 @@ let signInPage model dispatch =
         )
         .Elt()
 
+let gamePage model dispatch =
+    Main.Game().Elt()
+
 let menuItem (model: Model) (page: Page) (text: string) =
     Main.MenuItem()
         .Active(if model.page = page then "is-active" else "")
@@ -198,6 +203,7 @@ let view model dispatch =
             menuItem model Home "Home"
             menuItem model Counter "Counter"
             menuItem model Data "Download data"
+            menuItem model Game "Game"
         ])
         .Body(
             cond model.page <| function
@@ -207,6 +213,7 @@ let view model dispatch =
                 cond model.signedInAs <| function
                 | Some username -> dataPage model username dispatch
                 | None -> signInPage model dispatch
+            | Game -> gamePage model dispatch
         )
         .Error(
             cond model.error <| function
