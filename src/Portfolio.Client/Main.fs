@@ -116,7 +116,6 @@ module Main =
                 | Mobile -> "Auto", "70%"
                 | Desktop -> "33%", "80%"
             | None -> "33%", "80%"
-        //iframe [attr.src "../CV Hasslauer Johan.pdf#toolbar=0"; attr.width width; attr.height height] []
         object [attr.data "../CV_Hasslauer_Johan.pdf#toolbar=0"; attr.``type`` "application/pdf"; attr.width width; attr.height height] [
             p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
             a [attr.href "../CV_Hasslauer_Johan.pdf"; attr.download "CV Hasslauer Johan"; attr.style "color: #15F; text-decoration: none;"] [text "Download"]
@@ -127,9 +126,17 @@ module Main =
         | None ->
             Main.EmptyData().Elt()
         | Some games ->
+            let width =
+                match model.DeviceType with
+                | Some device ->
+                    match device with
+                    | Mobile -> "208"
+                    | Desktop -> "552"
+                | None -> "552"
+
             concat [
                 forEach games <| fun game ->
-                    iframe [attr.src $"https://itch.io/embed/{game.id}?border_width=5&dark=true"; "frameborder" => "0"; attr.width "552"; attr.height "167"; attr.style "height:167px"] [
+                    iframe [attr.src $"https://itch.io/embed/{game.id}?border_width=5&dark=true"; "frameborder" => "0"; attr.width width; attr.height "167"; attr.style "height:167px"] [
                         a [attr.href game.url] [text $"{game.title} by Fleaw"]
                     ]
             ]
