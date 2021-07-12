@@ -1,239 +1,167 @@
-module Portfolio.Client.Main
+namespace Portfolio.Client
 
 open System
 open System.Web
+open System.Threading.Tasks
 open Elmish
 open Bolero
 open Bolero.Html
 open Bolero.Remoting
 open Bolero.Remoting.Client
 open Bolero.Templating.Client
+open Microsoft.JSInterop
+open Microsoft.AspNetCore.Components.Routing
 
-/// Routing endpoints definition.
-type Page =
-    | [<EndPoint "/">] Home
-    | [<EndPoint "/counter">] Counter
-    | [<EndPoint "/data">] Data
-    | [<EndPoint "/game">] Game
+module Main =
+    /// Routing endpoints definition.
+    type Page =
+        | [<EndPoint "/#home">] Home
+        | [<EndPoint "/#games">] Games
 
-/// The Elmish application's model.
-type Model =
-    {
-        page: Page
-        counter: int
-        books: Book[] option
-        error: string option
-        username: string
-        password: string
-        signedInAs: option<string>
-        signInFailed: bool
-    }
+    type DeviceType =
+        | Desktop
+        | Mobile
 
-and Book =
-    {
-        title: string
-        author: string
-        publishDate: DateTime
-        isbn: string
-    }
+    /// The Elmish application's model.
+    type Model =
+        {
+            Page: Page
+            Games: Game[] option
+            DeviceType: DeviceType option
+        }
+    and Game =
+        {
+            id: int
+            title: string
+            description: string
+            url: string
+        }
 
-let initModel =
-    {
-        page = Home
-        counter = 0
-        books = None
-        error = None
-        username = ""
-        password = ""
-        signedInAs = None
-        signInFailed = false
-    }
+    let initModel =
+        {
+            Page = Home
+            Games = None
+            DeviceType = None
+        }
 
-/// Remote service definition.
-type BookService =
-    {
-        /// Get the list of all books in the collection.
-        getBooks: unit -> Async<Book[]>
+    type GameService =
+        {
+            getMyGames: unit -> Async<Game[]>
+        }
+        interface IRemoteService with
+            member this.BasePath = "/"
 
-        /// Add a book in the collection.
-        addBook: Book -> Async<unit>
+    /// The Elmish application's update messages.
+    type Message =
+        | SetPage of Page
+        | Initialized
+        | SetDeviceType of bool
+        | LocationChanged of LocationChangedEventArgs
+        | GetGames
+        | GotGames of Game[]
+        | Error of exn
 
-        /// Remove a book from the collection, identified by its ISBN.
-        removeBookByIsbn: string -> Async<unit>
+    let update remote (js: IJSRuntime) message model =
+        match message with
+        | SetPage page ->
+            let cmd =
+                match model.Games with
+                | Some _ -> Cmd.none
+                | None ->
+                    match page with
+                    | Home -> Cmd.none
+                    | Games -> Cmd.ofMsg GetGames
 
-        /// Sign into the application.
-        signIn : string * string -> Async<option<string>>
+            { model with Page = page }, cmd
+        | Initialized ->
+            let cmd =
+                match model.DeviceType with
+                    | None -> Cmd.OfJS.perform js "isDevice" [||] SetDeviceType
+                    | Some _ -> Cmd.none
+            model, cmd
+        | SetDeviceType mobile ->
+            let device =
+                match mobile with
+                | true -> Mobile
+                | false -> Desktop
+            { model with DeviceType = Some device } , Cmd.none
+        | LocationChanged e ->
+            let cmd =
+                match e.Location.Split('#') with
+                | [|_|] -> Home
+                | [|_; "home"|] -> Home
+                | [|_; "games"|] -> Games
+                | [|_; _|] -> Home
+                | _ -> Home
+                |>  SetPage
+                |> Cmd.ofMsg
+            model, cmd
+        | GetGames ->
+            let cmd = Cmd.OfAsync.either remote.getMyGames () GotGames Error
+            { model with Games = None }, cmd
+        | GotGames games ->
+            { model with Games = Some games }, Cmd.none
+        | Error exn ->
+            //TODO: Display something
+            model, Cmd.none
 
-        /// Get the user's name, or None if they are not authenticated.
-        getUsername : unit -> Async<string>
+    
+    type Main = Template<"wwwroot/main.html">
 
-        /// Sign out from the application.
-        signOut : unit -> Async<unit>
-    }
+    let homePage model =
+        let width, height =
+            match model.DeviceType with
+            | Some device ->
+                match device with
+                | Mobile -> "Auto", "70%"
+                | Desktop -> "33%", "80%"
+            | None -> "33%", "80%"
+        //iframe [attr.src "../CV Hasslauer Johan.pdf#toolbar=0"; attr.width width; attr.height height] []
+        object [attr.data "../CV_Hasslauer_Johan.pdf#toolbar=0"; attr.``type`` "application/pdf"; attr.width width; attr.height height] [
+            p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
+            a [attr.href "../CV_Hasslauer_Johan.pdf"; attr.download "CV Hasslauer Johan"; attr.style "color: #15F; text-decoration: none;"] [text "Download"]
+        ]
 
-    interface IRemoteService with
-        member this.BasePath = "/books"
+    let gamePage model =
+        cond model.Games <| function
+        | None ->
+            Main.EmptyData().Elt()
+        | Some games ->
+            concat [
+                forEach games <| fun game ->
+                    iframe [attr.src $"https://itch.io/embed/{game.id}?border_width=5&dark=true"; "frameborder" => "0"; attr.width "552"; attr.height "167"; attr.style "height:167px"] [
+                        a [attr.href game.url] [text $"{game.title} by Fleaw"]
+                    ]
+            ]
 
-/// The Elmish application's update messages.
-type Message =
-    | SetPage of Page
-    | Increment
-    | Decrement
-    | SetCounter of int
-    | GetBooks
-    | GotBooks of Book[]
-    | SetUsername of string
-    | SetPassword of string
-    | GetSignedInAs
-    | RecvSignedInAs of option<string>
-    | SendSignIn
-    | RecvSignIn of option<string>
-    | SendSignOut
-    | RecvSignOut
-    | Error of exn
-    | ClearError
+    let view model dispatch =
+        Main()
+            .Home(homePage model)
+            .Games(gamePage model)
+            .Elt()
 
-let update remote message model =
-    let onSignIn = function
-        | Some _ -> Cmd.ofMsg GetBooks
-        | None -> Cmd.none
-    match message with
-    | SetPage page ->
-        { model with page = page }, Cmd.none
+    type MyApp() =
+        inherit ProgramComponent<Model, Message>()        
 
-    | Increment ->
-        { model with counter = model.counter + 1 }, Cmd.none
-    | Decrement ->
-        { model with counter = model.counter - 1 }, Cmd.none
-    | SetCounter value ->
-        { model with counter = value }, Cmd.none
-
-    | GetBooks ->
-        let cmd = Cmd.OfAsync.either remote.getBooks () GotBooks Error
-        { model with books = None }, cmd
-    | GotBooks books ->
-        { model with books = Some books }, Cmd.none
-
-    | SetUsername s ->
-        { model with username = s }, Cmd.none
-    | SetPassword s ->
-        { model with password = s }, Cmd.none
-    | GetSignedInAs ->
-        model, Cmd.OfAuthorized.either remote.getUsername () RecvSignedInAs Error
-    | RecvSignedInAs username ->
-        { model with signedInAs = username }, onSignIn username
-    | SendSignIn ->
-        model, Cmd.OfAsync.either remote.signIn (model.username, model.password) RecvSignIn Error
-    | RecvSignIn username ->
-        { model with signedInAs = username; signInFailed = Option.isNone username }, onSignIn username
-    | SendSignOut ->
-        model, Cmd.OfAsync.either remote.signOut () (fun () -> RecvSignOut) Error
-    | RecvSignOut ->
-        { model with signedInAs = None; signInFailed = false }, Cmd.none
-
-    | Error RemoteUnauthorizedException ->
-        { model with error = Some "You have been logged out."; signedInAs = None }, Cmd.none
-    | Error exn ->
-        { model with error = Some exn.Message }, Cmd.none
-    | ClearError ->
-        { model with error = None }, Cmd.none
-
-/// Connects the routing system to the Elmish application.
-let router = Router.infer SetPage (fun model -> model.page)
-
-type Main = Template<"wwwroot/main.html">
-
-let homePage model dispatch =
-    Main.Home().Elt()
-
-let counterPage model dispatch =
-    Main.Counter()
-        .Decrement(fun _ -> dispatch Decrement)
-        .Increment(fun _ -> dispatch Increment)
-        .Value(model.counter, fun v -> dispatch (SetCounter v))
-        .Elt()
-
-let dataPage model (username: string) dispatch =
-    Main.Data()
-        .Reload(fun _ -> dispatch GetBooks)
-        .Username(username)
-        .SignOut(fun _ -> dispatch SendSignOut)
-        .Rows(cond model.books <| function
-            | None ->
-                Main.EmptyData().Elt()
-            | Some books ->
-                forEach books <| fun book ->
-                    tr [] [
-                        td [] [text book.title]
-                        td [] [text book.author]
-                        td [] [text (book.publishDate.ToString("yyyy-MM-dd"))]
-                        td [] [text book.isbn]
-                    ])
-        .Elt()
-
-let signInPage model dispatch =
-    Main.SignIn()
-        .Username(model.username, fun s -> dispatch (SetUsername s))
-        .Password(model.password, fun s -> dispatch (SetPassword s))
-        .SignIn(fun _ -> dispatch SendSignIn)
-        .ErrorNotification(
-            cond model.signInFailed <| function
-            | false -> empty
+        override this.OnAfterRenderAsync (firstRender:bool) : Task =
+            match firstRender with
             | true ->
-                Main.ErrorNotification()
-                    .HideClass("is-hidden")
-                    .Text("Sign in failed. Use any username and the passwor \"password\".")
-                    .Elt()
-        )
-        .Elt()
+                let baseTask = base.OnAfterRenderAsync firstRender
+                Task.Run(fun () -> baseTask) |> ignore
+                this.Dispatch Initialized
+                this.JSRuntime.InvokeVoidAsync("import", "./javascript/jquery.pagepiling.js").AsTask()
+            | false ->
+                Task.CompletedTask
 
-let gamePage model dispatch =
-    Main.Game().Elt()
+        override this.Program =
+            let onLocationChanged (dispatch: Message -> unit) =
+                this.NavigationManager.LocationChanged.Subscribe (LocationChanged >> dispatch) |> ignore
 
-let menuItem (model: Model) (page: Page) (text: string) =
-    Main.MenuItem()
-        .Active(if model.page = page then "is-active" else "")
-        .Url(router.Link page)
-        .Text(text)
-        .Elt()
-
-let view model dispatch =
-    Main()
-        .Menu(concat [
-            menuItem model Home "Home"
-            menuItem model Counter "Counter"
-            menuItem model Data "Download data"
-            menuItem model Game "Game"
-        ])
-        .Body(
-            cond model.page <| function
-            | Home -> homePage model dispatch
-            | Counter -> counterPage model dispatch
-            | Data ->
-                cond model.signedInAs <| function
-                | Some username -> dataPage model username dispatch
-                | None -> signInPage model dispatch
-            | Game -> gamePage model dispatch
-        )
-        .Error(
-            cond model.error <| function
-            | None -> empty
-            | Some err ->
-                Main.ErrorNotification()
-                    .Text(err)
-                    .Hide(fun _ -> dispatch ClearError)
-                    .Elt()
-        )
-        .Elt()
-
-type MyApp() =
-    inherit ProgramComponent<Model, Message>()
-
-    override this.Program =
-        let bookService = this.Remote<BookService>()
-        let update = update bookService
-        Program.mkProgram (fun _ -> initModel, Cmd.ofMsg GetSignedInAs) update view
-        |> Program.withRouter router
-#if DEBUG
-        |> Program.withHotReload
-#endif
+            let gameService = this.Remote<GameService>()
+            let update = update gameService this.JSRuntime
+            Program.mkProgram (fun _ -> initModel, Cmd.none) update view
+            |> Program.withSubscription (fun _ -> Cmd.ofSub onLocationChanged)
+    #if DEBUG
+            |> Program.withHotReload
+    #endif
+            

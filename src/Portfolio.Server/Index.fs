@@ -1,30 +1,25 @@
-module Portfolio.Server.Index
+namespace Portfolio.Server
 
 open Bolero
 open Bolero.Html
 open Bolero.Server.Html
 open Portfolio
+open System.Web
 
-let page = doctypeHtml [] [
-    head [] [
-        meta [attr.charset "UTF-8"]
-        meta [attr.name "viewport"; attr.content "width=device-width, initial-scale=1.0"]
-        title [] [text "Bolero Application"]
-        ``base`` [attr.href "/"]
-        link [attr.rel "stylesheet"; attr.href "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css"]
-        link [attr.rel "stylesheet"; attr.href "css/index.css"]
-        link [attr.rel "stylesheet"; attr.href "TemplateData/style.css"]
-    ]
-    body [] [
-        nav [attr.classes ["navbar"; "is-dark"]; "role" => "navigation"; attr.aria "label" "main navigation"] [
-            div [attr.classes ["navbar-brand"]] [
-                a [attr.classes ["navbar-item"; "has-text-weight-bold"; "is-size-5"]; attr.href "https://fsbolero.io"] [
-                    img [attr.style "height:40px"; attr.src "https://github.com/fsbolero/website/raw/master/src/Website/img/wasm-fsharp.png"]
-                    text "  Bolero"
-                ]
-            ]
+module Index =
+    let page = doctypeHtml [] [
+        head [] [
+            meta [attr.charset "UTF-8"]
+            meta [attr.name "viewport"; attr.content "width=device-width, initial-scale=1.0"]
+            title [] [text "Portfolio"]
+            ``base`` [attr.href "/"]
+            link [attr.rel "stylesheet"; attr.href "css/portfolio.css"]
+            link [attr.rel "stylesheet"; attr.href "css/jquery.pagepiling.css"]
+            script [attr.src "javascript/devicedetection.js"] []
+            script [attr.src "https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"] []
         ]
-        div [attr.id "main"] [rootComp<Client.Main.MyApp>]
-        boleroScript
+        body [] [
+            div [attr.id "main"] [rootComp<Client.Main.MyApp>]
+            boleroScript
+        ]
     ]
-]
