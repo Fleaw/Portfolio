@@ -35,3 +35,22 @@ ul {
     font-size: 4em;
     color: #ffffff;
 }
+
+#cv {
+    height: 100%;
+}
+
+#download {
+    margin: 10px auto;
+    padding: 15px 16px;
+    text-shadow: 0 -1px 0 rgb(0 0 0 / 25%);
+    border-radius: 6px;
+    width: fit-content;
+    cursor: pointer;
+    background-image: -webkit-gradient(linear,0 0,0 100%,from( #5bc0de),to( #2f96b4));
+}
+
+#download a {
+    text-decoration: none;
+    color: #fff;
+}

@@ -11,6 +11,7 @@ open Bolero.Remoting.Client
 open Bolero.Templating.Client
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Routing
+open Microsoft.AspNetCore.Http
 
 module Main =
     /// Routing endpoints definition.
@@ -26,7 +27,7 @@ module Main =
     type Model =
         {
             Page: Page
-            Games: Game[] option
+            Games: Result<Game[], string> option
             DeviceType: DeviceType option
         }
     and Game =
@@ -46,7 +47,7 @@ module Main =
 
     type GameService =
         {
-            getMyGames: unit -> Async<Game[]>
+            getMyGames: unit -> Async<Result<Game[],string>>
         }
         interface IRemoteService with
             member this.BasePath = "/"
@@ -58,8 +59,12 @@ module Main =
         | SetDeviceType of bool
         | LocationChanged of LocationChangedEventArgs
         | GetGames
-        | GotGames of Game[]
-        | Error of exn
+        | GotGames of Result<Game[], string>
+        | GetGamesError of exn
+
+
+    let jsConsoleError (js:IJSRuntime) (msg:string) =
+        Task.Run(fun () -> js.InvokeVoidAsync("console.error", [|msg|]).AsTask()) |> ignore
 
     let update remote (js: IJSRuntime) message model =
         match message with
@@ -76,7 +81,7 @@ module Main =
         | Initialized ->
             let cmd =
                 match model.DeviceType with
-                    | None -> Cmd.OfJS.perform js "isDevice" [||] SetDeviceType
+                    | None -> Cmd.OfJS.perform js "isMobile" [||] SetDeviceType
                     | Some _ -> Cmd.none
             model, cmd
         | SetDeviceType mobile ->
@@ -97,42 +102,59 @@ module Main =
                 |> Cmd.ofMsg
             model, cmd
         | GetGames ->
-            let cmd = Cmd.OfAsync.either remote.getMyGames () GotGames Error
+            let cmd = Cmd.OfAsync.either remote.getMyGames () GotGames GetGamesError
             { model with Games = None }, cmd
-        | GotGames games ->
-            { model with Games = Some games }, Cmd.none
-        | Error exn ->
-            //TODO: Display something
+        | GotGames result ->
+            let cmd =
+                match result with
+                | Error msg -> GetGamesError (Exception $"Itch.io error : {msg}") |> Cmd.ofMsg
+                | Ok _ -> Cmd.none
+            { model with Games = Some result }, cmd
+        | GetGamesError exn ->
+            jsConsoleError js exn.Message
             model, Cmd.none
-
     
     type Main = Template<"wwwroot/main.html">
 
     let homePage model =
-        let width, height =
-            match model.DeviceType with
-            | Some device ->
-                match device with
-                | Mobile -> "Auto", "70%"
-                | Desktop -> "33%", "80%"
-            | None -> "33%", "80%"
-        //iframe [attr.src "../CV Hasslauer Johan.pdf#toolbar=0"; attr.width width; attr.height height] []
-        object [attr.data "../CV_Hasslauer_Johan.pdf#toolbar=0"; attr.``type`` "application/pdf"; attr.width width; attr.height height] [
-            p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
-            a [attr.href "../CV_Hasslauer_Johan.pdf"; attr.download "CV Hasslauer Johan"; attr.style "color: #15F; text-decoration: none;"] [text "Download"]
+        let download =
+            div [attr.id "download"] [
+                a [attr.href "../CV_Hasslauer_Johan.pdf"; attr.download "CV Hasslauer Johan"] [text "Download"]
+            ]
+
+        let pdfViewer =
+            object [attr.data "../CV_Hasslauer_Johan.pdf#toolbar=0"; attr.``type`` "application/pdf"; attr.width "33%"; attr.height "75%"] [
+                p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
+            ]
+
+        div [attr.id "cv"] [
+            pdfViewer
+            download
         ]
 
     let gamePage model =
         cond model.Games <| function
         | None ->
             Main.EmptyData().Elt()
-        | Some games ->
-            concat [
-                forEach games <| fun game ->
-                    iframe [attr.src $"https://itch.io/embed/{game.id}?border_width=5&dark=true"; "frameborder" => "0"; attr.width "552"; attr.height "167"; attr.style "height:167px"] [
-                        a [attr.href game.url] [text $"{game.title} by Fleaw"]
-                    ]
-            ]
+        | Some result ->
+            match result with
+            | Ok games ->
+                let width =
+                    match model.DeviceType with
+                    | Some device ->
+                        match device with
+                        | Mobile -> "208"
+                        | Desktop -> "552"
+                    | None -> "552"
+
+                concat [
+                    forEach games <| fun game ->
+                        iframe [attr.src $"https://itch.io/embed/{game.id}?border_width=5&dark=true"; "frameborder" => "0"; attr.width width; attr.height "167"; attr.style "height:167px"] [
+                            a [attr.href game.url] [text $"{game.title} by Fleaw"]
+                        ]
+                ]
+            | Error msg ->
+                Main.Error().Msg($"\n{msg}").Elt()
 
     let view model dispatch =
         Main()
