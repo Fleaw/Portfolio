@@ -12,12 +12,13 @@ open Bolero.Templating.Client
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Routing
 open Microsoft.AspNetCore.Http
+open Models
 
 module Main =
     /// Routing endpoints definition.
     type Page =
-        | [<EndPoint "/#home">] Home
-        | [<EndPoint "/#games">] Games
+        | [<EndPoint "/#aboutme">] AboutMe
+        | [<EndPoint "/#myprojects">] MyProjects
 
     type DeviceType =
         | Desktop
@@ -27,27 +28,26 @@ module Main =
     type Model =
         {
             Page: Page
-            Games: Result<Game[], string> option
             DeviceType: DeviceType option
-        }
-    and Game =
-        {
-            id: int
-            title: string
-            description: string
-            url: string
+
+            Games: Result<Game[], string> option
+            Repos: Result<GitHubRepo[], string> option
         }
 
     let initModel =
         {
-            Page = Home
-            Games = None
+            Page = AboutMe
             DeviceType = None
+            Games = None
+            Repos = None
         }
 
-    type GameService =
+    /// Remote Services
+    type MyProjectsService =
         {
-            getMyGames: unit -> Async<Result<Game[],string>>
+            getMyGames: unit -> Async<Result<Game[], string>>
+
+            getMyRepos: unit -> Async<Result<GitHubRepo[], string>>
         }
         interface IRemoteService with
             member this.BasePath = "/"
@@ -55,75 +55,108 @@ module Main =
     /// The Elmish application's update messages.
     type Message =
         | SetPage of Page
-        | Initialized
+        | Initialized of string
         | SetDeviceType of bool
-        | LocationChanged of LocationChangedEventArgs
+        | LocationChanged of string
+
         | GetGames
         | GotGames of Result<Game[], string>
-        | GetGamesError of exn
+
+        | GetGitubRepos
+        | GotGitubRepos of Result<GitHubRepo[], string>
+
+        | ErrorMsg of exn
 
 
     let jsConsoleError (js:IJSRuntime) (msg:string) =
-        Task.Run(fun () -> js.InvokeVoidAsync("console.error", [|msg|]).AsTask()) |> ignore
+        Task.Run(fun () -> js.InvokeVoidAsync("console.error", msg).AsTask()) |> ignore
+        Task.Run(fun () -> js.InvokeVoidAsync("alert", msg).AsTask()) |> ignore
 
     let update remote (js: IJSRuntime) message model =
         match message with
         | SetPage page ->
+            (*
             let cmd =
-                match model.Games with
-                | Some _ -> Cmd.none
-                | None ->
-                    match page with
-                    | Home -> Cmd.none
-                    | Games -> Cmd.ofMsg GetGames
+                match page with
+                | AboutMe -> Cmd.none
+                | MyProjects ->
+                    let getGamesCmd = Cmd.ofMsg GetGames
+                    let getReposCmd = Cmd.ofMsg GetGitubRepos
 
-            { model with Page = page }, cmd
-        | Initialized ->
-            let cmd =
+                    match model.Games, model.Repos with
+                    | Some _, Some _ -> Cmd.none
+                    | None , Some _ -> getGamesCmd
+                    | Some _, None -> getReposCmd
+                    | None, None -> Cmd.batch [getGamesCmd; getReposCmd]
+            *)
+            { model with Page = page }, Cmd.none
+        | Initialized url ->
+            let deviceTypeCmd =
                 match model.DeviceType with
                     | None -> Cmd.OfJS.perform js "isMobile" [||] SetDeviceType
                     | Some _ -> Cmd.none
-            model, cmd
+
+            let getGamesCmd = Cmd.ofMsg GetGames
+            let getReposCmd = Cmd.ofMsg GetGitubRepos
+            
+            model, Cmd.batch [deviceTypeCmd; getGamesCmd; getReposCmd; Cmd.ofMsg (LocationChanged url)]
         | SetDeviceType mobile ->
             let device =
                 match mobile with
                 | true -> Mobile
                 | false -> Desktop
             { model with DeviceType = Some device } , Cmd.none
-        | LocationChanged e ->
+        | LocationChanged url ->
             let cmd =
-                match e.Location.Split('#') with
-                | [|_|] -> Home
-                | [|_; "home"|] -> Home
-                | [|_; "games"|] -> Games
-                | [|_; _|] -> Home
-                | _ -> Home
+                match url.Split('#') with
+                | [|_|] -> AboutMe
+                | [|_; "aboutme"|] -> AboutMe
+                | [|_; "myprojects"|] -> MyProjects
+                | [|_; _|] -> AboutMe
+                | _ -> AboutMe
                 |>  SetPage
                 |> Cmd.ofMsg
             model, cmd
+        /// Games
         | GetGames ->
-            let cmd = Cmd.OfAsync.either remote.getMyGames () GotGames GetGamesError
+            let cmd = Cmd.OfAsync.either remote.getMyGames () GotGames ErrorMsg
             { model with Games = None }, cmd
         | GotGames result ->
             let cmd =
                 match result with
-                | Error msg -> GetGamesError (Exception $"Itch.io error : {msg}") |> Cmd.ofMsg
+                | Error msg -> ErrorMsg (Exception $"Itch.io error : {msg}") |> Cmd.ofMsg
                 | Ok _ -> Cmd.none
             { model with Games = Some result }, cmd
-        | GetGamesError exn ->
+        /// Repositories
+        | GetGitubRepos ->
+            let cmd = Cmd.OfAsync.either remote.getMyRepos () GotGitubRepos ErrorMsg
+            { model with Repos = None }, cmd
+        | GotGitubRepos result ->
+            let cmd =
+                match result with
+                | Error msg -> ErrorMsg (Exception $"GitHub error : {msg}") |> Cmd.ofMsg
+                | Ok _ -> Cmd.none
+            { model with Repos = Some result }, cmd
+        /// Error
+        | ErrorMsg exn ->
             jsConsoleError js exn.Message
             model, Cmd.none
+
     
     type Main = Template<"wwwroot/main.html">
 
-    let homePage model =
+    let aboutMePage =
+        let driveFileID = "1wlB2JzVHqUgwlYbH9SDS7dolkNVwgXar"
+        let cvUrl = sprintf "https://drive.google.com/file/d/%s/preview" driveFileID
+        let downloadUrl = sprintf "https://drive.google.com/uc?export=download&id=%s" driveFileID
+
         let download =
             div [attr.id "download"] [
-                a [attr.href "../CV_Hasslauer_Johan.pdf"; attr.download "CV Hasslauer Johan"] [text "Download"]
+                a [attr.href downloadUrl] [text "Download"]
             ]
 
         let pdfViewer =
-            object [attr.data "../CV_Hasslauer_Johan.pdf#toolbar=0"; attr.``type`` "application/pdf"; attr.width "33%"; attr.height "75%"] [
+            object [attr.data cvUrl; attr.``type`` "application/pdf"; attr.width "40%"; attr.height "75%"] [
                 p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
             ]
 
@@ -132,54 +165,102 @@ module Main =
             download
         ]
 
-    let gamePage model =
-        cond model.Games <| function
+    let displayGames device gameList =
+        match gameList with
         | None ->
-            Main.EmptyData().Elt()
+            Main.GettingGames().Elt()
         | Some result ->
+            let width =
+                match device with
+                | Some device ->
+                    match device with
+                    | Mobile -> "208"
+                    | Desktop -> "552"
+                | None -> "552"
+
+            let displayScreenshots game =
+                game.Screenshots
+                |> List.mapi (fun i url ->
+                    a [attr.href url; "data-lightbox" => $"{game.Title}-gallery"; "data-title" => ""] [if i = 0 then img [attr.``class`` "cover"; attr.src game.Cover; attr.height "158"; attr.alt ""]]
+                )
+                |> concat
+
+            let showGame game =
+                Main.Game()
+                    .Id(game.Id |> string)
+                    .Width(width)
+                    .Title(game.Title)
+                    .Url(game.Url)
+                    .Screenshots(displayScreenshots game)
+                    .Elt()
+
             match result with
             | Ok games ->
-                let width =
-                    match model.DeviceType with
-                    | Some device ->
-                        match device with
-                        | Mobile -> "208"
-                        | Desktop -> "552"
-                    | None -> "552"
+                forEach games showGame
+            | Error _ -> Main.GamesError().Elt()
 
-                concat [
-                    forEach games <| fun game ->
-                        iframe [attr.src $"https://itch.io/embed/{game.id}?border_width=5&dark=true"; "frameborder" => "0"; attr.width width; attr.height "167"; attr.style "height:167px"] [
-                            a [attr.href game.url] [text $"{game.title} by Fleaw"]
-                        ]
-                ]
-            | Error msg ->
-                Main.Error().Msg($"\n{msg}").Elt()
+
+    let displayRepos repoList =
+        match repoList with
+        | None ->
+            Main.GettingRepos().Elt()
+        | Some result ->
+            let showLanguage lang =
+                a [
+                    attr.``class`` "language"
+                    attr.href (sprintf "https://github.com/search?q=user:Fleaw+language:%s&type=Repositories" (HttpUtility.HtmlEncode lang))
+                ] [text lang]
+
+            let showTopic topic =
+                a [
+                    attr.``class`` "topic"
+                    attr.href (sprintf "https://github.com/search?q=user:Fleaw+topic:%s&type=Repositories" (HttpUtility.HtmlEncode topic))
+                ] [text topic]
+
+            let showRepository repo =
+                Main.Repository()
+                    .Url(repo.Url)
+                    .Name(repo.Name)
+                    .Languages(forEach repo.Languages showLanguage)
+                    .Description(repo.Description |> Option.defaultValue "")
+                    .Topics(forEach repo.Topics showTopic)
+                    .Elt()
+        
+            match result with
+            | Ok repos ->
+                forEach repos showRepository
+            | Error _ -> Main.ReposError().Elt()
 
     let view model dispatch =
         Main()
-            .Home(homePage model)
-            .Games(gamePage model)
+            .AboutMe(aboutMePage)
+            .Games(displayGames model.DeviceType model.Games)
+            .Repositories(displayRepos model.Repos)
+            .ClassLeft(if model.DeviceType = Some DeviceType.Desktop then "left" else "")
+            .ClassRight(if model.DeviceType = Some DeviceType.Desktop then "right" else "")
             .Elt()
 
     type MyApp() =
-        inherit ProgramComponent<Model, Message>()        
+        inherit ProgramComponent<Model, Message>()
+        
+        let runTask task =
+            Task.Run(fun () -> task) |> ignore
 
         override this.OnAfterRenderAsync (firstRender:bool) : Task =
             match firstRender with
             | true ->
                 let baseTask = base.OnAfterRenderAsync firstRender
-                Task.Run(fun () -> baseTask) |> ignore
-                this.Dispatch Initialized
+                runTask baseTask
+                this.Dispatch (Initialized this.NavigationManager.Uri)
                 this.JSRuntime.InvokeVoidAsync("import", "./javascript/jquery.pagepiling.js").AsTask()
             | false ->
                 Task.CompletedTask
 
         override this.Program =
             let onLocationChanged (dispatch: Message -> unit) =
-                this.NavigationManager.LocationChanged.Subscribe (LocationChanged >> dispatch) |> ignore
+                this.NavigationManager.LocationChanged.Subscribe (fun e -> dispatch (LocationChanged e.Location)) |> ignore
 
-            let gameService = this.Remote<GameService>()
+            let gameService = this.Remote<MyProjectsService>()
             let update = update gameService this.JSRuntime
             Program.mkProgram (fun _ -> initModel, Cmd.none) update view
             |> Program.withSubscription (fun _ -> Cmd.ofSub onLocationChanged)

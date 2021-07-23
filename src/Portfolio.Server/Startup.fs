@@ -25,7 +25,7 @@ type Startup() =
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie()
                 .Services
-            .AddRemoting<Portfolio.Server.GameService>()
+            .AddRemoting<Portfolio.Server.MyProjectsService>()
             .AddBoleroHost(
                 server = true,
                 prerendered = true)

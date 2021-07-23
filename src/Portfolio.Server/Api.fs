@@ -3,6 +3,7 @@
 open FSharp.Data
 open Portfolio
 open System
+open Client.Models
 
 [<AutoOpen>]
 module Api =
@@ -65,9 +66,18 @@ module Api =
 
         type MyGames = JsonProvider<myGamesSample, SampleIsList=true>
 
-        let myGames () : Async<Result<Client.Main.Game[], string>> = async {
+        let myGames () : Async<Result<Game[], string>> = async {
             let! jsonResponse = MyGames.AsyncLoad(myGamesUrl)
         
+            let getScreenshots (gameUrl:string) =
+                HtmlDocument.Load(gameUrl).Descendants ["a"]
+                |> Seq.choose (fun x ->
+                    x.TryGetAttribute("href")
+                    |> Option.map (fun a ->  a.Value())
+                )
+                |> Seq.filter (fun url -> url.StartsWith("https://img.itch.zone"))
+                |> Seq.toList
+
             let result =
                 match jsonResponse.Errors.Length with
                 | x when x > 0 ->
@@ -76,16 +86,73 @@ module Api =
                     |> Error
                 | _ ->
                     jsonResponse.Games
-                    |> Seq.map (fun g ->
+                    |> Array.map (fun g ->
                         {
-                            Client.Main.Game.id = g.Id
-                            Client.Main.Game.title = g.Title
-                            Client.Main.Game.description = g.ShortText
-                            Client.Main.Game.url = g.Url
+                            Id = g.Id
+                            Title = g.Title
+                            Description = g.ShortText
+                            Url = g.Url
+                            Cover = g.CoverUrl.Replace("\\", "")
+                            Screenshots = getScreenshots g.Url
                         }
                     )
-                    |> Seq.toArray
                     |> Ok
 
             return result
         }
+
+    module GitHub =
+        open System.Text.RegularExpressions
+        
+        [<Literal>]
+        let githubUser = "Fleaw"
+
+        [<Literal>]
+        let topicsResponse =
+            """
+            {
+              "names": [
+                "something"
+              ]
+            }
+            """
+
+        type GitHubRepos = JsonProvider<"https://api.github.com/users/google/repos">
+        type RepoTopics = JsonProvider<topicsResponse>
+
+        let myRepos () : Async<Result<GitHubRepo[], string>> = async {
+            try
+                let! repos = GitHubRepos.AsyncLoad($"https://api.github.com/users/{githubUser}/repos")
+
+                let filterRepo (repo:GitHubRepos.Root) =
+                    not repo.Fork && repo.StargazersCount > 0
+
+                let getRepoTopics repoName =
+                    let response = Http.AsyncRequestString($"https://api.github.com/repos/{githubUser}/{repoName}/topics", headers = ["User-Agent", "Test"; "Accept", "application/vnd.github.mercy-preview+json"]) |> Async.RunSynchronously
+                    RepoTopics.Parse response
+
+                let getRepoLanguages languagesUrl =
+                    let response = Http.AsyncRequestString(languagesUrl, headers=["User-Agent", "Test"]) |> Async.RunSynchronously
+                    Regex.Replace(response.Replace("{","").Replace("}",""), "[^A-Z,a-z,#]", "").Split ","
+
+                let result =
+                    repos
+                    |> Array.filter filterRepo
+                    |> Array.map (fun r ->
+                        let topics = getRepoTopics r.Name
+                        let languages = getRepoLanguages r.LanguagesUrl
+
+                        {
+                            Name = r.Name
+                            Description = r.Description
+                            Topics = topics.Names |> Array.toList
+                            Languages = languages |> Array.toList
+                            Url = r.HtmlUrl
+                        }
+                    )
+
+                return Ok result
+            with ex ->
+                return Error ex.Message
+        }
+        

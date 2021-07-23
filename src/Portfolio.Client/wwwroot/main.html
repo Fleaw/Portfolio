@@ -1,22 +1,75 @@
 <ul id="menu">
-    <li data-menuanchor="home" class="active"><a href="#home">Home</a></li>
-    <li data-menuanchor="games"><a href="#games">Games</a></li>
+    <li data-menuanchor="aboutme" class="active"><a href="#aboutme">About me</a></li>
+    <li data-menuanchor="myprojects"><a href="#myprojects">My projects</a></li>
 </ul>
 
 <div id="pagepiling">
+    <!-- AboutMe - Page -->
     <div class="section" id="section1">
-        <h1 class="title">Home</h1>
-        ${Home}
+        <h1 class="title">About me</h1>
+        ${AboutMe}
     </div>
+    <!-- MyProjects - Page -->
     <div class="section" id="section2">
-        <h1 class="title">Games</h1>
-        ${Games}
-        <template id="EmptyData">
-            <div colspan="4">Retrieving games from Itch.io...</div>
-        </template>
-        <template id="Error">
-            <div colspan="4">Error while retrieving games from Itch.io :</div>
-            <div>${Msg}</div>
-        </template>
+        <h1 class="title">My projects</h1>
+
+        <div id="projects">
+            <!-- GitHub Projects -->
+            <div class="${ClassLeft}">
+                <div id="repositories">
+                    ${Repositories}
+                    <template id="GettingRepos">
+                        <div class="info">Retrieving repos from GitHub...</div>
+                    </template>
+                    <template id="ReposError">
+                        <div class="error">Error when retrieving repos from GitHub</div>
+                    </template>
+                    <template id="Repository">
+                        <div class="repository">
+                            <h2>
+                                <a class="name" href="${Url}">${Name}</a>
+                            </h2>
+                            <div class="languages">
+                                ${Languages}
+                            </div>
+                            <p class="description">
+                                ${Description}
+                            </p>
+                            <div class="topics">
+                                ${Topics}
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <!-- Games -->
+            <div class="${ClassRight}">
+                <div id="games">
+                    ${Games}
+                    <template id="GettingGames">
+                        <div class="info">Retrieving games from Itch.io...</div>
+                    </template>
+                    <template id="GamesError">
+                        <div class="error">Error when retrieving games from Itch.io</div>
+                    </template>
+                    <template id="Game">
+                        <div class="game">
+                            ${Screenshots}
+                            <iframe frameborder="0" src="https://itch.io/embed/${Id}?border_width=5&dark=true" width="${Width}" height="167">
+                                <a href="${Url}">${Title} by Fleaw</a>
+                            </iframe>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<div id="footer">
+    <div id="link">
+        <a target="_blank" title="GitHub" href="https://github.com/Fleaw"><i class="fab fa-github"></i></a>
+    </div>
+</div>
+
+<script src="./javascript/lightbox.js"></script>

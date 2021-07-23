@@ -1,4 +1,8 @@
-﻿#menu {
+﻿/* ------------------- */
+/*         Menu        */
+/* ------------------- */
+
+#menu {
     position: fixed;
     top: 0;
     right: 20px;
@@ -10,11 +14,26 @@
     display: inline-block;
     margin: 0 10px;
     text-align: right;
+    background: rgba(255,255,255, 0.5);
+    border-radius: 10px;
+}
+
+#menu li a, #menu li.active a {
+    padding: 9px 18px;
+    display: block;
+}
+
+#menu li.active {
+    background: rgba(0,0,0, 0.5);
 }
 
 #menu li a {
     text-decoration: none;
     color: #000;
+}
+
+#menu li.active a {
+    color: #fff;
 }
 
 ol, ul {
@@ -26,6 +45,10 @@ ul {
     text-align: right;
 }
 
+/* ------------------- */
+/*       Section       */
+/* ------------------- */
+
 .section {
     text-align: center;
 }
@@ -36,6 +59,10 @@ ul {
     color: #ffffff;
 }
 
+/* ------------------- */
+/*  Section - AboutMe  */
+/* ------------------- */
+
 #cv {
     height: 100%;
 }
@@ -45,7 +72,7 @@ ul {
     padding: 15px 16px;
     text-shadow: 0 -1px 0 rgb(0 0 0 / 25%);
     border-radius: 6px;
-    width: fit-content;
+    display: table;
     cursor: pointer;
     background-image: -webkit-gradient(linear,0 0,0 100%,from( #5bc0de),to( #2f96b4));
 }
@@ -53,4 +80,195 @@ ul {
 #download a {
     text-decoration: none;
     color: #fff;
+}
+
+/* -------------------- */
+/* Section - MyProjects */
+/* -------------------- */
+
+#projects {
+    width: 100%;
+    height: 76%;
+    display: flex;
+}
+
+@media only screen and (max-width: 600px) {
+    #projects {
+        display: block;
+        overflow-y: scroll;
+    }
+}
+
+#projects .left {
+    width: 50%;
+    border-right: 1px solid #000;
+    overflow-y: auto;
+}
+
+#projects .right {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+#repositories {
+    margin: auto;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#games {
+    display: inline-grid;
+}
+
+@media only screen and (max-width: 600px) {
+    #games {
+        width: 80%;
+    }
+}
+
+.repository {
+    background-color: #ededed;
+    padding: 10px;
+    border-radius: 8px;
+    width: 45%;
+    margin: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: left;
+}
+
+@media only screen and (max-width: 600px) {
+    .repository {
+        width: 100%;
+    }
+}
+
+.game {
+    margin: 10px;
+    padding: 10px;
+    background-color: #0463bd;
+    border-radius: 8px;
+}
+
+.game .cover {
+    margin-right: 5px;
+    border: 5px solid #fff;
+    border-radius: 5px;
+}
+
+@media only screen and (max-width: 600px) {
+    .game .cover {
+        margin-right: 0px;
+        margin-bottom: 5px;
+    }
+}
+
+.game iframe {
+    border-radius: 5px;
+}
+
+.repository h2 {
+    margin: 0px 5px;
+}
+
+.repository a {
+    text-decoration: none;
+    color: #000;
+}
+
+.repository a:hover {
+    text-decoration: underline;
+}
+
+.languages {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.repository .language {
+    background-color: #36d27b;
+    border: 1px solid transparent;
+    border-radius: 2em;
+    padding: 0 10px;
+    color: #fff;
+    margin: 2px;
+}
+
+.repository .description {
+    color: #586069;
+    margin: 5px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.repository .topics {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.repository .topic {
+    background-color: #6ad0f7;
+    border: 1px solid transparent;
+    border-radius: 2em;
+    padding: 0 10px;
+    margin: 2px;
+}
+
+.info {
+    margin: auto;
+    color: #05eb6b;
+    font-weight: bold;
+    animation: blink 1.5s linear infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+.error {
+    margin: auto;
+    color: #cf1f1f;
+    font-weight: bold;
+}
+
+/* ------------------- */
+/*        Footer       */
+/* ------------------- */
+
+#footer {
+    bottom: 0;
+    width: 100%;
+    height: 70px;
+    position: fixed;
+    text-align: right;
+    z-index: 70;
+    display: flex;
+    justify-content: flex-end;
+}
+
+#footer div {
+    display: flex;
+    align-items: center;
+    padding: 25px;
+}
+
+#footer a {
+    text-decoration: none;
+    color: #000;
+}
+
+#footer a i {
+    font-size: 2.5em;
 }

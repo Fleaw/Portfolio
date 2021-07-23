@@ -981,26 +981,14 @@ $(document).ready(function () {
     $('#pagepiling').pagepiling({
         menu: '#menu',
         direction: 'horizontal',
-        loopBottom: true,
-        loopTop: true,
+        loopBottom: false,
+        loopTop: false,
         verticalCentered: false,
         scrollingSpeed: 500,
         keyboardScrolling: true,
-        anchors: ['home', 'games'],
-        sectionsColor: ['#2C3E50', '#39C'],
-        navigation: {
-            'position': 'right',
-            'tooltips': ['Home', 'Games']
-        },
-        afterRender: function () {
-            $('#pp-nav').addClass('custom');
-        },
-        afterLoad: function (anchorLink, index) {
-            if (index > 1) {
-                $('#pp-nav').removeClass('custom');
-            } else {
-                $('#pp-nav').addClass('custom');
-            }
-        }
+        anchors: ['aboutme', 'myprojects'],
+        navigation: null,
+        sectionsColor: ['#2C3E50', '#2ea2bf'],
+        normalScrollElements: '#projects'
     });
 });
