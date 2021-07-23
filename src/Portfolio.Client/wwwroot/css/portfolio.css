@@ -73,6 +73,12 @@ ul {
     height: 100%;
 }
 
+@media only screen and (max-width: 600px) {
+    #cv {
+        height: 85%;
+    }
+}
+
 #download {
     margin: 10px auto;
     padding: 15px 16px;
