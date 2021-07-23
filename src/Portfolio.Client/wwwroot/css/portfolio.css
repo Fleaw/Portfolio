@@ -63,6 +63,7 @@ ul {
     font-weight: normal;
     font-size: 4em;
     color: #ffffff;
+    margin-bottom: 15px;
 }
 
 /* ------------------- */
@@ -76,6 +77,7 @@ ul {
 @media only screen and (max-width: 600px) {
     #cv {
         height: 85%;
+        overflow-y: scroll;
     }
 }
 
@@ -114,6 +116,7 @@ ul {
 
 #projects .left {
     width: 50%;
+    min-width: 50%;
     border-right: 1px solid #000;
     overflow-y: auto;
 }
@@ -166,15 +169,15 @@ ul {
 }
 
 .game .cover {
-    margin-right: 5px;
+    margin-left: 5px;
     border: 5px solid #fff;
     border-radius: 5px;
 }
 
 @media only screen and (max-width: 600px) {
     .game .cover {
-        margin-right: 0px;
-        margin-bottom: 5px;
+        margin-left: 0px;
+        margin-top: 5px;
     }
 }
 

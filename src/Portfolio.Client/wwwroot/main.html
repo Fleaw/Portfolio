@@ -14,8 +14,30 @@
         <h1 class="title">My projects</h1>
 
         <div id="projects">
-            <!-- GitHub Projects -->
+            <!-- Games -->
             <div class="${ClassLeft}">
+                <h1>Games</h1>
+                <div id="games">
+                    ${Games}
+                    <template id="GettingGames">
+                        <div class="info">Retrieving games from Itch.io...</div>
+                    </template>
+                    <template id="GamesError">
+                        <div class="error">Error when retrieving games from Itch.io</div>
+                    </template>
+                    <template id="Game">
+                        <div class="game">
+                            <iframe frameborder="0" src="https://itch.io/embed/${Id}?border_width=5&dark=true" width="${Width}" height="167">
+                                <a href="${Url}">${Title} by Fleaw</a>
+                            </iframe>
+                            ${Screenshots}
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <!-- GitHub Projects -->
+            <div class="${ClassRight}">
+                <h1>Others</h1>
                 <div id="repositories">
                     ${Repositories}
                     <template id="GettingRepos">
@@ -38,26 +60,6 @@
                             <div class="topics">
                                 ${Topics}
                             </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-            <!-- Games -->
-            <div class="${ClassRight}">
-                <div id="games">
-                    ${Games}
-                    <template id="GettingGames">
-                        <div class="info">Retrieving games from Itch.io...</div>
-                    </template>
-                    <template id="GamesError">
-                        <div class="error">Error when retrieving games from Itch.io</div>
-                    </template>
-                    <template id="Game">
-                        <div class="game">
-                            ${Screenshots}
-                            <iframe frameborder="0" src="https://itch.io/embed/${Id}?border_width=5&dark=true" width="${Width}" height="167">
-                                <a href="${Url}">${Title} by Fleaw</a>
-                            </iframe>
                         </div>
                     </template>
                 </div>
