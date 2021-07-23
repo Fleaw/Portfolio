@@ -28,7 +28,7 @@ module Main =
     type Model =
         {
             Page: Page
-            DeviceType: DeviceType option
+            DeviceType: DeviceType
 
             Games: Result<Game[], string> option
             Repos: Result<GitHubRepo[], string> option
@@ -37,7 +37,7 @@ module Main =
     let initModel =
         {
             Page = AboutMe
-            DeviceType = None
+            DeviceType = Desktop
             Games = None
             Repos = None
         }
@@ -91,21 +91,17 @@ module Main =
             *)
             { model with Page = page }, Cmd.none
         | Initialized url ->
-            let deviceTypeCmd =
-                match model.DeviceType with
-                    | None -> Cmd.OfJS.perform js "isMobile" [||] SetDeviceType
-                    | Some _ -> Cmd.none
-
+            let deviceTypeCmd = Cmd.OfJS.perform js "isMobile" [||] SetDeviceType
             let getGamesCmd = Cmd.ofMsg GetGames
             let getReposCmd = Cmd.ofMsg GetGitubRepos
             
             model, Cmd.batch [deviceTypeCmd; getGamesCmd; getReposCmd; Cmd.ofMsg (LocationChanged url)]
-        | SetDeviceType mobile ->
+        | SetDeviceType isMobile ->
             let device =
-                match mobile with
+                match isMobile with
                 | true -> Mobile
                 | false -> Desktop
-            { model with DeviceType = Some device } , Cmd.none
+            { model with DeviceType = device } , Cmd.none
         | LocationChanged url ->
             let cmd =
                 match url.Split('#') with
@@ -145,7 +141,7 @@ module Main =
     
     type Main = Template<"wwwroot/main.html">
 
-    let aboutMePage =
+    let aboutMePage device =
         let driveFileID = "1wlB2JzVHqUgwlYbH9SDS7dolkNVwgXar"
         let cvUrl = sprintf "https://drive.google.com/file/d/%s/preview" driveFileID
         let downloadUrl = sprintf "https://drive.google.com/uc?export=download&id=%s" driveFileID
@@ -156,7 +152,7 @@ module Main =
             ]
 
         let pdfViewer =
-            object [attr.data cvUrl; attr.``type`` "application/pdf"; attr.width "40%"; attr.height "75%"] [
+            object [attr.data cvUrl; attr.``type`` "application/pdf"; attr.width (if device = Desktop then "40%" else "80%"); attr.height "75%"] [
                 p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
             ]
 
@@ -172,11 +168,8 @@ module Main =
         | Some result ->
             let width =
                 match device with
-                | Some device ->
-                    match device with
-                    | Mobile -> "208"
-                    | Desktop -> "552"
-                | None -> "552"
+                | Mobile -> "208"
+                | Desktop -> "552"
 
             let displayScreenshots game =
                 game.Screenshots
@@ -233,12 +226,13 @@ module Main =
 
     let view model dispatch =
         Main()
-            .AboutMe(aboutMePage)
+            .AboutMe(aboutMePage model.DeviceType)
             .Games(displayGames model.DeviceType model.Games)
             .Repositories(displayRepos model.Repos)
-            .ClassLeft(if model.DeviceType = Some DeviceType.Desktop then "left" else "")
-            .ClassRight(if model.DeviceType = Some DeviceType.Desktop then "right" else "")
+            .ClassLeft(if model.DeviceType = Desktop then "left" else "")
+            .ClassRight(if model.DeviceType = Desktop then "right" else "")
             .Elt()
+
 
     type MyApp() =
         inherit ProgramComponent<Model, Message>()

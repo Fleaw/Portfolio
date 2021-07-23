@@ -978,6 +978,8 @@
 })(jQuery, document, window);
 
 $(document).ready(function () {
+    let isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(navigator.userAgent);
+
     $('#pagepiling').pagepiling({
         menu: '#menu',
         direction: 'horizontal',
@@ -985,10 +987,14 @@ $(document).ready(function () {
         loopTop: false,
         verticalCentered: false,
         scrollingSpeed: 500,
-        keyboardScrolling: true,
+        keyboardScrolling: false,
         anchors: ['aboutme', 'myprojects'],
         navigation: null,
         sectionsColor: ['#2C3E50', '#2ea2bf'],
         normalScrollElements: '#projects'
     });
+
+    if (isMobile) {
+        $.fn.pagepiling.setAllowScrolling(false);
+    }
 });
