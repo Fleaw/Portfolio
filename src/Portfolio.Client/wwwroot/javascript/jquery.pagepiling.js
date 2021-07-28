@@ -990,11 +990,16 @@ $(document).ready(function () {
         keyboardScrolling: false,
         anchors: ['aboutme', 'myprojects'],
         navigation: null,
-        sectionsColor: ['#2C3E50', '#2ea2bf'],
+        sectionsColor: ['#525684', '#45c9e6'],
         normalScrollElements: '#projects'
     });
 
     if (isMobile) {
         $.fn.pagepiling.setAllowScrolling(false);
+
+        if (document.documentElement.scrollHeight <= document.documentElement.clientHeight) {
+            bodyTag = document.getElementsByTagName('body')[0];
+            bodyTag.style.height = document.documentElement.clientWidth / screen.width * screen.height + 'px';
+        }
     }
 });

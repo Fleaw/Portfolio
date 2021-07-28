@@ -13,6 +13,11 @@ module Index =
             meta [attr.name "viewport"; attr.content "width=device-width, initial-scale=1.0"]
             title [] [text "Portfolio"]
             ``base`` [attr.href "/"]
+            //Google fonts
+            link [attr.rel "preconnect"; attr.href "https://fonts.googleapis.com"]
+            link [attr.rel "preconnect"; attr.href "https://fonts.gstatic.com"; attr.crossorigin ""]
+            link [attr.rel "stylesheet"; attr.href "https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap"]
+
             link [attr.rel "stylesheet"; attr.href "css/portfolio.css"]
             link [attr.rel "stylesheet"; attr.href "css/jquery.pagepiling.css"]
             link [attr.rel "stylesheet"; attr.href "css/lightbox.css"]

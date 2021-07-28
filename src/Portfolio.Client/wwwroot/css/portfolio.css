@@ -1,4 +1,8 @@
-﻿/* ------------------- */
+﻿body {
+    font-family: 'Fredoka one', cursive;
+}
+
+/* ------------------- */
 /*         Menu        */
 /* ------------------- */
 
@@ -20,8 +24,9 @@
     display: inline-block;
     margin: 0 10px;
     text-align: right;
-    background: rgba(255,255,255, 0.5);
+    background: rgba(255,255,255, 0.75);
     border-radius: 10px;
+    box-shadow: 4px 5px 5px 0px rgb(38 38 38 / 72%);
 }
 
 #menu li a, #menu li.active a {
@@ -30,7 +35,8 @@
 }
 
 #menu li.active {
-    background: rgba(0,0,0, 0.5);
+    background: rgba(0,0,0, 0.75);
+    box-shadow: none;
 }
 
 #menu li a {
@@ -63,7 +69,9 @@ ul {
     font-weight: normal;
     font-size: 4em;
     color: #ffffff;
+    margin-top: 55px;
     margin-bottom: 15px;
+    text-shadow: 2px 2px 1px rgb(35 35 35);
 }
 
 /* ------------------- */
@@ -88,7 +96,7 @@ ul {
     border-radius: 6px;
     display: table;
     cursor: pointer;
-    background-image: -webkit-gradient(linear,0 0,0 100%,from( #5bc0de),to( #2f96b4));
+    background-image: -webkit-gradient(linear,0 0,0 100%,from( #de5b5b),to( #b42f2f));
 }
 
 #download a {
@@ -153,6 +161,7 @@ ul {
     flex-direction: column;
     justify-content: space-between;
     text-align: left;
+    box-shadow: 4px 5px 5px 0px rgb(38 38 38 / 72%);
 }
 
 @media only screen and (max-width: 600px) {
@@ -164,8 +173,9 @@ ul {
 .game {
     margin: 10px;
     padding: 10px;
-    background-color: #0463bd;
+    background-color: #5ed88f;
     border-radius: 8px;
+    box-shadow: 4px 5px 5px 0px rgb(38 38 38 / 72%);
 }
 
 .game .cover {
@@ -183,6 +193,7 @@ ul {
 
 .game iframe {
     border-radius: 5px;
+    box-shadow: 4px 5px 5px 0px rgb(38 38 38 / 72%);
 }
 
 .repository h2 {
@@ -265,7 +276,8 @@ ul {
 
 #footer {
     bottom: 0;
-    width: 100%;
+    right: 0;
+    /*width: 100%;*/
     height: 70px;
     position: fixed;
     text-align: right;
@@ -277,6 +289,9 @@ ul {
 @media only screen and (max-width: 600px) {
     #footer {
         height: 50px;
+        top: 5px;
+        left: 5px;
+        right: auto;
     }
 }
 
