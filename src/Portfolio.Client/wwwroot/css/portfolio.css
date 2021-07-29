@@ -65,6 +65,12 @@ ul {
     text-align: center;
 }
 
+@media only screen and (max-width: 1200px) and (orientation: landscape) {
+    .section {
+        overflow-y: scroll;
+    }
+}
+
 .section .title {
     font-weight: normal;
     font-size: 4em;
@@ -84,7 +90,7 @@ ul {
 
 @media only screen and (max-width: 600px) {
     #cv {
-        height: 85%;
+        height: 76%;
         overflow-y: scroll;
     }
 }
@@ -129,9 +135,23 @@ ul {
     overflow-y: auto;
 }
 
+@media only screen and (max-width: 600px) {
+    #projects .left {
+        width: auto;
+        min-width: auto;
+        border-right: none;
+    }
+}
+
 #projects .right {
     flex-grow: 1;
     overflow-y: auto;
+}
+
+@media only screen and (max-width: 600px) {
+    #projects .right {
+        flex-grow: unset;
+    }
 }
 
 #repositories {
@@ -139,6 +159,13 @@ ul {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
+}
+
+@media only screen and (max-width: 1200px) {
+    #repositories {
+        flex-direction: column;
+        align-content: center;
+    }
 }
 
 #games {
@@ -164,9 +191,9 @@ ul {
     box-shadow: 4px 5px 5px 0px rgb(38 38 38 / 72%);
 }
 
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 1200px) {
     .repository {
-        width: 100%;
+        width: auto;
     }
 }
 
@@ -286,7 +313,7 @@ ul {
     justify-content: flex-end;
 }
 
-@media only screen and (max-width: 600px) {
+@media screen and (orientation: landscape), (max-width: 1200px) {
     #footer {
         height: 50px;
         top: 5px;

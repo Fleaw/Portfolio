@@ -229,8 +229,6 @@ module Main =
             .AboutMe(aboutMePage model.DeviceType)
             .Games(displayGames model.DeviceType model.Games)
             .Repositories(displayRepos model.Repos)
-            .ClassLeft(if model.DeviceType = Desktop then "left" else "")
-            .ClassRight(if model.DeviceType = Desktop then "right" else "")
             .Elt()
 
 

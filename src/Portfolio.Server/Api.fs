@@ -102,11 +102,19 @@ module Api =
         }
 
     module GitHub =
+        open System.Text
         open System.Text.RegularExpressions
         
         [<Literal>]
+        let appName = "Portfolio"
+
+        [<Literal>]
         let githubUser = "Fleaw"
 
+        let token  = Environment.GetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN")
+
+        let authorization = System.Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes($"{githubUser}:{token}"))
+            
         [<Literal>]
         let topicsResponse =
             """
@@ -117,22 +125,30 @@ module Api =
             }
             """
 
+        let headers = 
+            [
+                "User-Agent", appName
+                "Authorization", $"Basic {authorization}"
+            ]
+
         type GitHubRepos = JsonProvider<"https://api.github.com/users/google/repos">
         type RepoTopics = JsonProvider<topicsResponse>
 
         let myRepos () : Async<Result<GitHubRepo[], string>> = async {
             try
-                let! repos = GitHubRepos.AsyncLoad($"https://api.github.com/users/{githubUser}/repos")
+                let! response = Http.AsyncRequestString($"https://api.github.com/users/{githubUser}/repos", headers = headers)
+
+                let repos = GitHubRepos.Parse(response)
 
                 let filterRepo (repo:GitHubRepos.Root) =
                     not repo.Fork && repo.StargazersCount > 0
 
                 let getRepoTopics repoName =
-                    let response = Http.AsyncRequestString($"https://api.github.com/repos/{githubUser}/{repoName}/topics", headers = ["User-Agent", "Test"; "Accept", "application/vnd.github.mercy-preview+json"]) |> Async.RunSynchronously
+                    let response = Http.AsyncRequestString($"https://api.github.com/repos/{githubUser}/{repoName}/topics", headers = ("Accept", "application/vnd.github.mercy-preview+json") :: headers) |> Async.RunSynchronously
                     RepoTopics.Parse response
 
                 let getRepoLanguages languagesUrl =
-                    let response = Http.AsyncRequestString(languagesUrl, headers=["User-Agent", "Test"]) |> Async.RunSynchronously
+                    let response = Http.AsyncRequestString(languagesUrl, headers=headers) |> Async.RunSynchronously
                     Regex.Replace(response.Replace("{","").Replace("}",""), "[^A-Z,a-z,#]", "").Split ","
 
                 let result =
