@@ -313,7 +313,7 @@ ul {
     justify-content: flex-end;
 }
 
-@media screen and (orientation: landscape), (max-width: 1200px) {
+@media only screen and (max-width: 1200px) {
     #footer {
         height: 50px;
         top: 5px;
