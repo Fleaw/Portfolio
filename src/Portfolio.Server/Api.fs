@@ -105,15 +105,47 @@ module Api =
         open System.Text
         open System.Text.RegularExpressions
         
-        [<Literal>]
-        let appName = "Portfolio"
-
-        [<Literal>]
-        let githubUser = "Fleaw"
-
-        let token  = Environment.GetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN")
+        let appName = Environment.GetEnvironmentVariable("GITHUB_API_APPNAME")
+        let githubUser = Environment.GetEnvironmentVariable("GITHUB_USER")
+        let gistSettingsId = Environment.GetEnvironmentVariable("GIST_SETTINGS_ID")
+        let token = Environment.GetEnvironmentVariable("GITHUB_PERSONAL_ACCESS_TOKEN")
 
         let authorization = System.Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes($"{githubUser}:{token}"))
+
+        [<Literal>]
+        let gistFile =
+            """
+            {
+                "filename": "filename.json",
+                "type": "application/json",
+                "language": "JSON",
+                "raw_url": "https://gist.githubusercontent.com/user/gist_id/raw/something/filename.json",
+                "size": 164,
+                "truncated": false,
+                "content": "content"
+              }
+            """
+
+        [<Literal>]
+        let gistSettings =
+            """
+            {
+                "projects": [
+            		{
+            			"id": "370673520",
+            			"order": 0			
+            		},
+            		{
+            			"id": "386361214",
+            			"order": 1			
+            		},
+            		{
+            			"id": "386307268",
+            			"order": 2			
+            		}
+            	]
+            }
+            """
             
         [<Literal>]
         let topicsResponse =
@@ -132,16 +164,30 @@ module Api =
             ]
 
         type GitHubRepos = JsonProvider<"https://api.github.com/users/google/repos">
+        type Gist = JsonProvider<"https://api.github.com/gists/6cad326836d38bd3a7ae">
+        type GistFile = JsonProvider<gistFile>
+        type Settings = JsonProvider<gistSettings>
         type RepoTopics = JsonProvider<topicsResponse>
 
         let myRepos () : Async<Result<GitHubRepo[], string>> = async {
             try
                 let! response = Http.AsyncRequestString($"https://api.github.com/users/{githubUser}/repos", headers = headers)
-
                 let repos = GitHubRepos.Parse(response)
 
+                let! gist = Gist.AsyncLoad($"https://api.github.com/gists/{gistSettingsId}")
+                let settings =
+                    let file =
+                        (gist.Files.JsonValue.Item "PortfolioSettings.json").ToString()
+                        |> GistFile.Parse
+                    file.Content |> Settings.Parse
+                
+                let filter = settings.Projects |> Array.map (fun s -> s.Id, s.Order)
+
                 let filterRepo (repo:GitHubRepos.Root) =
-                    not repo.Fork && repo.StargazersCount > 0
+                    filter 
+                    |> Array.filter (fun f -> fst f = repo.Id) 
+                    |> Array.tryExactlyOne
+                    |> Option.map (fun f -> repo, snd f)
 
                 let getRepoTopics repoName =
                     let response = Http.AsyncRequestString($"https://api.github.com/repos/{githubUser}/{repoName}/topics", headers = ("Accept", "application/vnd.github.mercy-preview+json") :: headers) |> Async.RunSynchronously
@@ -153,19 +199,23 @@ module Api =
 
                 let result =
                     repos
-                    |> Array.filter filterRepo
+                    |> Array.choose filterRepo
                     |> Array.map (fun r ->
-                        let topics = getRepoTopics r.Name
-                        let languages = getRepoLanguages r.LanguagesUrl
+                        let repo = fst r
+                        let topics = getRepoTopics repo.Name
+                        let languages = getRepoLanguages repo.LanguagesUrl
 
                         {
-                            Name = r.Name
-                            Description = r.Description
+                            Name = repo.Name
+                            Description = repo.Description
                             Topics = topics.Names |> Array.toList
                             Languages = languages |> Array.toList
-                            Url = r.HtmlUrl
-                        }
+                            Url = repo.HtmlUrl
+                        },
+                        snd r
                     )
+                    |> Array.sortBy (fun r -> snd r)
+                    |> Array.map fst
 
                 return Ok result
             with ex ->
