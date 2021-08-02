@@ -1,10 +1,8 @@
 namespace Portfolio.Server
 
-open Bolero
 open Bolero.Html
 open Bolero.Server.Html
 open Portfolio
-open System.Web
 
 module Index =
     let page = doctypeHtml [] [

@@ -10,8 +10,6 @@ open Bolero.Remoting
 open Bolero.Remoting.Client
 open Bolero.Templating.Client
 open Microsoft.JSInterop
-open Microsoft.AspNetCore.Components.Routing
-open Microsoft.AspNetCore.Http
 open Models
 
 module Main =
@@ -68,27 +66,15 @@ module Main =
         | ErrorMsg of exn
 
 
+    let jsAlertErrot (js:IJSRuntime) (msg:string) =
+        Task.Run(fun () -> js.InvokeVoidAsync("alert", msg).AsTask()) |> ignore
+
     let jsConsoleError (js:IJSRuntime) (msg:string) =
         Task.Run(fun () -> js.InvokeVoidAsync("console.error", msg).AsTask()) |> ignore
-        Task.Run(fun () -> js.InvokeVoidAsync("alert", msg).AsTask()) |> ignore
 
     let update remote (js: IJSRuntime) message model =
         match message with
         | SetPage page ->
-            (*
-            let cmd =
-                match page with
-                | AboutMe -> Cmd.none
-                | MyProjects ->
-                    let getGamesCmd = Cmd.ofMsg GetGames
-                    let getReposCmd = Cmd.ofMsg GetGitubRepos
-
-                    match model.Games, model.Repos with
-                    | Some _, Some _ -> Cmd.none
-                    | None , Some _ -> getGamesCmd
-                    | Some _, None -> getReposCmd
-                    | None, None -> Cmd.batch [getGamesCmd; getReposCmd]
-            *)
             { model with Page = page }, Cmd.none
         | Initialized url ->
             let deviceTypeCmd = Cmd.OfJS.perform js "isMobile" [||] SetDeviceType
@@ -194,6 +180,8 @@ module Main =
 
 
     let displayRepos repoList =
+        let gitHubUser = "Fleaw"
+
         match repoList with
         | None ->
             Main.GettingRepos().Elt()
@@ -201,13 +189,13 @@ module Main =
             let showLanguage lang =
                 a [
                     attr.``class`` "language"
-                    attr.href (sprintf "https://github.com/search?q=user:Fleaw+language:%s&type=Repositories" (HttpUtility.HtmlEncode lang))
+                    attr.href (sprintf "https://github.com/search?q=user:%s+language:%s&type=Repositories" gitHubUser (HttpUtility.HtmlEncode lang))
                 ] [text lang]
 
             let showTopic topic =
                 a [
                     attr.``class`` "topic"
-                    attr.href (sprintf "https://github.com/search?q=user:Fleaw+topic:%s&type=Repositories" (HttpUtility.HtmlEncode topic))
+                    attr.href (sprintf "https://github.com/search?q=user:%s+topic:%s&type=Repositories" gitHubUser (HttpUtility.HtmlEncode topic))
                 ] [text topic]
 
             let showRepository repo =

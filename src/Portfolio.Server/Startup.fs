@@ -3,15 +3,11 @@ namespace Portfolio.Server
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Authentication.Cookies
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Builder.Extensions
 open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
-open Bolero
 open Bolero.Remoting.Server
 open Bolero.Server
-open Portfolio
 open Bolero.Templating.Server
-open Microsoft.AspNetCore.StaticFiles
 
 type Startup() =
 
