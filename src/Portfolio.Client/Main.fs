@@ -229,9 +229,9 @@ module Main =
         override this.OnAfterRenderAsync (firstRender:bool) : Task =
             match firstRender with
             | true ->
-                let baseTask = base.OnAfterRenderAsync firstRender
-                runTask baseTask
+                base.OnAfterRenderAsync firstRender |> runTask
                 this.Dispatch (Initialized this.NavigationManager.Uri)
+                this.JSRuntime.InvokeVoidAsync("import", "./javascript/googletagmanager.js").AsTask() |> runTask
                 this.JSRuntime.InvokeVoidAsync("import", "./javascript/jquery.pagepiling.js").AsTask()
             | false ->
                 Task.CompletedTask
