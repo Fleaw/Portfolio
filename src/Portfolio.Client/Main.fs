@@ -28,6 +28,8 @@ module Main =
             Page: Page
             DeviceType: DeviceType
 
+            CVDriveId: string option
+
             Games: Result<Game[], string> option
             Repos: Result<GitHubRepo[], string> option
         }
@@ -36,16 +38,19 @@ module Main =
         {
             Page = AboutMe
             DeviceType = Desktop
+            CVDriveId = None
             Games = None
             Repos = None
         }
 
     /// Remote Services
-    type MyProjectsService =
+    type MyRemoteService =
         {
             getMyGames: unit -> Async<Result<Game[], string>>
 
             getMyRepos: unit -> Async<Result<GitHubRepo[], string>>
+
+            getCVDriveId: unit -> Async<string>
         }
         interface IRemoteService with
             member this.BasePath = "/"
@@ -56,6 +61,9 @@ module Main =
         | Initialized of string
         | SetDeviceType of bool
         | LocationChanged of string
+
+        | GetCVDriveId
+        | GotCVDriveId of string
 
         | GetGames
         | GotGames of Result<Game[], string>
@@ -80,8 +88,9 @@ module Main =
             let deviceTypeCmd = Cmd.OfJS.perform js "isMobile" [||] SetDeviceType
             let getGamesCmd = Cmd.ofMsg GetGames
             let getReposCmd = Cmd.ofMsg GetGitubRepos
+            let getCVDriveIdCmd = Cmd.ofMsg GetCVDriveId
             
-            model, Cmd.batch [deviceTypeCmd; getGamesCmd; getReposCmd; Cmd.ofMsg (LocationChanged url)]
+            model, Cmd.batch [deviceTypeCmd; getGamesCmd; getReposCmd; getCVDriveIdCmd; Cmd.ofMsg (LocationChanged url)]
         | SetDeviceType isMobile ->
             let device =
                 match isMobile with
@@ -99,6 +108,12 @@ module Main =
                 |>  SetPage
                 |> Cmd.ofMsg
             model, cmd
+        /// CV
+        | GetCVDriveId ->
+            let cmd = Cmd.OfAsync.perform remote.getCVDriveId () GotCVDriveId
+            { model with CVDriveId = None }, cmd
+        | GotCVDriveId id ->
+            { model with CVDriveId = Some id }, Cmd.none
         /// Games
         | GetGames ->
             let cmd = Cmd.OfAsync.either remote.getMyGames () GotGames ErrorMsg
@@ -127,25 +142,28 @@ module Main =
     
     type Main = Template<"wwwroot/main.html">
 
-    let aboutMePage device =
-        let driveFileID = "1wlB2JzVHqUgwlYbH9SDS7dolkNVwgXar"
-        let cvUrl = sprintf "https://drive.google.com/file/d/%s/preview" driveFileID
-        let downloadUrl = sprintf "https://drive.google.com/uc?export=download&id=%s" driveFileID
+    let aboutMePage device cvDriveId =
+        match cvDriveId with
+        | Some id ->
+            let cvUrl = sprintf "https://drive.google.com/file/d/%s/preview" id
+            let downloadUrl = sprintf "https://drive.google.com/uc?export=download&id=%s" id
 
-        let download =
-            div [attr.id "download"] [
-                a [attr.href downloadUrl] [text "Download"]
+            let download =
+                div [attr.id "download"] [
+                    a [attr.href downloadUrl] [text "Download"]
+                ]
+
+            let pdfViewer =
+                object [attr.data cvUrl; attr.``type`` "application/pdf"; attr.width (if device = Desktop then "40%" else "80%"); attr.height "75%"] [
+                    p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
+                ]
+
+            div [attr.id "cv"] [
+                pdfViewer
+                download
             ]
-
-        let pdfViewer =
-            object [attr.data cvUrl; attr.``type`` "application/pdf"; attr.width (if device = Desktop then "40%" else "80%"); attr.height "75%"] [
-                p [attr.style "color: #fff"] [text "PDF preview not supported by your device"]
-            ]
-
-        div [attr.id "cv"] [
-            pdfViewer
-            download
-        ]
+        | None ->
+            Node.Empty
 
     let displayGames device gameList =
         match gameList with
@@ -214,7 +232,7 @@ module Main =
 
     let view model dispatch =
         Main()
-            .AboutMe(aboutMePage model.DeviceType)
+            .AboutMe(aboutMePage model.DeviceType model.CVDriveId)
             .Games(displayGames model.DeviceType model.Games)
             .Repositories(displayRepos model.Repos)
             .Elt()
@@ -226,7 +244,7 @@ module Main =
         let runTask task =
             Task.Run(fun () -> task) |> ignore
 
-        override this.OnAfterRenderAsync (firstRender:bool) : Task =
+        override this.OnAfterRenderAsync firstRender : Task =
             match firstRender with
             | true ->
                 base.OnAfterRenderAsync firstRender |> runTask
@@ -237,10 +255,10 @@ module Main =
                 Task.CompletedTask
 
         override this.Program =
-            let onLocationChanged (dispatch: Message -> unit) =
+            let onLocationChanged dispatch =
                 this.NavigationManager.LocationChanged.Subscribe (fun e -> dispatch (LocationChanged e.Location)) |> ignore
 
-            let gameService = this.Remote<MyProjectsService>()
+            let gameService = this.Remote<MyRemoteService>()
             let update = update gameService this.JSRuntime
             Program.mkProgram (fun _ -> initModel, Cmd.none) update view
             |> Program.withSubscription (fun _ -> Cmd.ofSub onLocationChanged)
